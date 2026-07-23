@@ -1,0 +1,30 @@
+name: Provider proposal
+description: Propose a documented search provider adapter
+title: "[Provider]: "
+labels: ["provider"]
+body:
+  - type: input
+    attributes:
+      label: Provider and official documentation
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why does this improve SearchForge?
+      description: Explain coverage, reliability, privacy, or cost advantages.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Authentication
+      options: [No key, API key, Self-hosted, Other]
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Due diligence
+      options:
+        - label: The provider documents programmatic access.
+          required: true
+        - label: I reviewed its usage terms and rate limits.
+          required: true

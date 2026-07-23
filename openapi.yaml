@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: SearchForge API
+  version: 0.1.0
+  description: Provider-neutral web search for LLMs, agents, and RAG.
+servers:
+  - url: http://localhost:3000
+paths:
+  /healthz:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Service is alive.
+  /v1/providers:
+    get:
+      operationId: listProviders
+      responses:
+        "200":
+          description: Configured provider names.
+  /v1/search:
+    post:
+      operationId: searchWeb
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Ranked evidence from available providers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid request.
+        "401":
+          description: Missing or invalid API key.
+        "429":
+          description: Rate limit exceeded.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    SearchRequest:
+      type: object
+      required: [query]
+      additionalProperties: false
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 500
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 8
+        language:
+          type: string
+          default: en
+        freshness:
+          type: string
+          enum: [day, week, month, year]
+          default: month
+        safeSearch:
+          type: string
+          enum: [off, moderate, strict]
+          default: moderate
+        providers:
+          type: array
+          items:
+            type: string
+    SearchResult:
+      type: object
+      required: [title, url, snippet, source, sources, score]
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+        snippet:
+          type: string
+        publishedAt:
+          type: string
+        source:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+        score:
+          type: number
+    SearchResponse:
+      type: object
+      required: [schemaVersion, query, results, providers, tookMs, cached]
+      properties:
+        schemaVersion:
+          const: "1.0"
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        providers:
+          type: array
+          items:
+            type: object
+        tookMs:
+          type: integer
+        cached:
+          type: boolean
+security:
+  - bearerAuth: []

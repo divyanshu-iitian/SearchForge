@@ -1,0 +1,26 @@
+services:
+  searchforge:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      SEARCHFORGE_SEARXNG_URL: http://searxng:8080
+      SEARCHFORGE_API_KEY: ${SEARCHFORGE_API_KEY:-}
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY:-}
+    depends_on:
+      searxng:
+        condition: service_healthy
+    restart: unless-stopped
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./deploy/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped

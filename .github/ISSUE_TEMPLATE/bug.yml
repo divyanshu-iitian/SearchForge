@@ -1,0 +1,32 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include expected and actual behavior.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: SearchForge version
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Integration
+      options: [REST, MCP, CLI, TypeScript SDK, Docker]
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Minimal reproduction
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Provider status output
+      description: Remove API keys and other secrets.
