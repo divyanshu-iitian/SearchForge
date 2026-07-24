@@ -25,13 +25,13 @@ It does **not** generate answers, hide citations, scrape public SearXNG instance
 
 ## What you get
 
-| Capability | Default source | Cost / credentials |
-|---|---|---|
-| `web` | Wikipedia; optional private SearXNG | No key / self-hosted |
-| `code` | GitHub repository search | No key; token optional |
-| `academic` | Crossref works and DOI metadata | No key |
-| `community` | Hacker News via Algolia | No key, community service |
-| `read_url` | Jina Reader | No key, currently rate-limited |
+| Capability  | Default source                      | Cost / credentials             |
+| ----------- | ----------------------------------- | ------------------------------ |
+| `web`       | Wikipedia; optional private SearXNG | No key / self-hosted           |
+| `code`      | GitHub repository search            | No key; token optional         |
+| `academic`  | Crossref works and DOI metadata     | No key                         |
+| `community` | Hacker News via Algolia             | No key, community service      |
+| `read_url`  | Jina Reader                         | No key, currently rate-limited |
 
 SearchForge starts with all no-key adapters enabled. A GitHub token only raises the public API quota, and Brave remains an optional keyed backend. Broad, independent web metasearch is provided by the included SearXNG stack.
 
@@ -237,15 +237,15 @@ npm install github:divyanshu-iitian/SearchForge
 
 ## Provider details
 
-| Provider | Capability | Access | Enabled |
-|---|---|---|---|
-| [SearXNG](https://docs.searxng.org/) | Web | Self-hosted, no vendor fee | `SEARCHFORGE_SEARXNG_URL` |
-| Wikipedia | Web knowledge fallback | No key | Always |
-| [GitHub](https://docs.github.com/rest/search/search) | Code repositories | No key; 60 unauthenticated REST requests/hour, search has tighter limits | Always |
-| [Crossref](https://www.crossref.org/documentation/retrieve-metadata/rest-api/) | Academic metadata | No key; `mailto` recommended | Always |
-| [HN Algolia](https://hn.algolia.com/api) | Community | No key; community-operated availability | Always |
-| [Jina Reader](https://jina.ai/reader/) | URL to Markdown | No key; documented no-key quota currently 20 RPM | Always |
-| [Brave Search](https://brave.com/search/api/) | Web | API key | `BRAVE_SEARCH_API_KEY` |
+| Provider                                                                       | Capability             | Access                                                                   | Enabled                   |
+| ------------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------ | ------------------------- |
+| [SearXNG](https://docs.searxng.org/)                                           | Web                    | Self-hosted, no vendor fee                                               | `SEARCHFORGE_SEARXNG_URL` |
+| Wikipedia                                                                      | Web knowledge fallback | No key                                                                   | Always                    |
+| [GitHub](https://docs.github.com/rest/search/search)                           | Code repositories      | No key; 60 unauthenticated REST requests/hour, search has tighter limits | Always                    |
+| [Crossref](https://www.crossref.org/documentation/retrieve-metadata/rest-api/) | Academic metadata      | No key; `mailto` recommended                                             | Always                    |
+| [HN Algolia](https://hn.algolia.com/api)                                       | Community              | No key; community-operated availability                                  | Always                    |
+| [Jina Reader](https://jina.ai/reader/)                                         | URL to Markdown        | No key; documented no-key quota currently 20 RPM                         | Always                    |
+| [Brave Search](https://brave.com/search/api/)                                  | Web                    | API key                                                                  | `BRAVE_SEARCH_API_KEY`    |
 
 SearchForge intentionally does not configure public SearXNG instances. They often disable JSON or limit automated traffic; the Docker stack is the stable free path.
 
@@ -275,19 +275,19 @@ This capability-first design is inspired by [Agent Reach](https://github.com/Pan
 
 ## Configuration
 
-| Variable | Default | Purpose |
-|---|---:|---|
-| `SEARCHFORGE_SEARXNG_URL` | unset | Private SearXNG base URL |
-| `GITHUB_TOKEN` | unset | Optional GitHub quota increase |
-| `CROSSREF_MAILTO` | unset | Crossref polite-pool identity |
-| `BRAVE_SEARCH_API_KEY` | unset | Optional Brave backend |
-| `SEARCHFORGE_API_KEY` | unset | REST bearer or `x-api-key` |
-| `SEARCHFORGE_PORT` | `3000` | REST port |
-| `SEARCHFORGE_HOST` | `127.0.0.1` | Bind address |
-| `SEARCHFORGE_TIMEOUT_MS` | `8000` | Per-dependency timeout |
-| `SEARCHFORGE_CACHE_TTL_MS` | `300000` | In-memory cache TTL |
-| `SEARCHFORGE_CACHE_MAX_ENTRIES` | `500` | Cache entry bound |
-| `SEARCHFORGE_RATE_LIMIT` | `60` | Requests/client/minute |
+| Variable                        |     Default | Purpose                        |
+| ------------------------------- | ----------: | ------------------------------ |
+| `SEARCHFORGE_SEARXNG_URL`       |       unset | Private SearXNG base URL       |
+| `GITHUB_TOKEN`                  |       unset | Optional GitHub quota increase |
+| `CROSSREF_MAILTO`               |       unset | Crossref polite-pool identity  |
+| `BRAVE_SEARCH_API_KEY`          |       unset | Optional Brave backend         |
+| `SEARCHFORGE_API_KEY`           |       unset | REST bearer or `x-api-key`     |
+| `SEARCHFORGE_PORT`              |      `3000` | REST port                      |
+| `SEARCHFORGE_HOST`              | `127.0.0.1` | Bind address                   |
+| `SEARCHFORGE_TIMEOUT_MS`        |      `8000` | Per-dependency timeout         |
+| `SEARCHFORGE_CACHE_TTL_MS`      |    `300000` | In-memory cache TTL            |
+| `SEARCHFORGE_CACHE_MAX_ENTRIES` |       `500` | Cache entry bound              |
+| `SEARCHFORGE_RATE_LIMIT`        |        `60` | Requests/client/minute         |
 
 ## Production boundary
 
