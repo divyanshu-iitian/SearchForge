@@ -1,0 +1,61 @@
+# SearchForge
+
+> SearchForge is a free, open-source web search API and MCP server for LLMs, AI agents, and retrieval-augmented generation (RAG) pipelines.
+
+Canonical project: https://github.com/divyanshu-iitian/SearchForge
+Documentation: https://divyanshu-iitian.github.io/SearchForge/
+License: MIT
+Language: TypeScript
+Runtime: Node.js 20 or newer
+
+## What SearchForge does
+
+SearchForge provides one self-hostable retrieval gateway with MCP, REST, CLI, and TypeScript interfaces. It routes searches by capability, normalizes results, removes duplicate URLs, combines rankings, retains citations, and reports provider health. It returns evidence rather than generating an answer.
+
+## Search capabilities
+
+- Web: private SearXNG metasearch with Wikipedia as a no-key knowledge fallback
+- Code: GitHub repository search
+- Academic: Crossref works and DOI metadata
+- Community: Hacker News search through the Algolia API
+- Read URL: public web pages converted to bounded Markdown through Jina Reader
+
+## MCP tools
+
+- web_search: structured, citation-ready search
+- read_url: convert a public HTTP or HTTPS URL to Markdown
+- search_status: report configured capabilities, access tiers, latency, and health
+
+## Installation
+
+```bash
+git clone https://github.com/divyanshu-iitian/SearchForge.git
+cd SearchForge
+npm install
+npm run build
+node dist/cli.js doctor
+```
+
+For broad web metasearch with a private SearXNG instance:
+
+```bash
+docker compose up --build
+```
+
+## Important project documents
+
+- README: https://github.com/divyanshu-iitian/SearchForge/blob/main/README.md
+- OpenAPI: https://github.com/divyanshu-iitian/SearchForge/blob/main/openapi.yaml
+- Security: https://github.com/divyanshu-iitian/SearchForge/blob/main/SECURITY.md
+- Contributing: https://github.com/divyanshu-iitian/SearchForge/blob/main/CONTRIBUTING.md
+- Changelog: https://github.com/divyanshu-iitian/SearchForge/blob/main/CHANGELOG.md
+- Releases: https://github.com/divyanshu-iitian/SearchForge/releases
+
+## Design principles
+
+1. Evidence over generated answers
+2. Free and self-hosted paths before vendor lock-in
+3. Partial results over total failure
+4. Honest capability and quota reporting
+5. Stable contracts and explicit provenance
+6. No telemetry by default

@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+.playwright-cli/
+output/
 .env
 *.log
 *.tgz

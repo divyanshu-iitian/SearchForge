@@ -1,7 +1,7 @@
 {
   "name": "searchforge-rag",
   "version": "0.2.0",
-  "description": "Free, open-source search and web-reading gateway for LLMs, agents, and RAG.",
+  "description": "Open-source web search API and MCP server for LLMs, AI agents, and RAG.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,7 @@
     "searchforge": "./dist/cli.js",
     "searchforge-mcp": "./dist/mcp.js"
   },
+  "mcpName": "io.github.divyanshu-iitian/searchforge",
   "files": [
     "dist",
     "README.md",
@@ -39,7 +40,11 @@
     "metasearch",
     "free-api",
     "academic-search",
-    "github-search"
+    "github-search",
+    "mcp-server",
+    "llm-web-search",
+    "rag-web-search",
+    "self-hosted-search"
   ],
   "author": "Divyanshu <divyanshu-iitian@users.noreply.github.com>",
   "license": "MIT",
@@ -50,7 +55,7 @@
   "bugs": {
     "url": "https://github.com/divyanshu-iitian/SearchForge/issues"
   },
-  "homepage": "https://github.com/divyanshu-iitian/SearchForge#readme",
+  "homepage": "https://divyanshu-iitian.github.io/SearchForge/",
   "engines": {
     "node": ">=20"
   },

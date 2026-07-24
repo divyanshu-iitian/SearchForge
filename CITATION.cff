@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use SearchForge in your research or project, please cite the software."
+title: "SearchForge: Open-source web search for LLMs, agents, and RAG"
+type: software
+authors:
+  - family-names: "Divyanshu"
+    given-names: "Divyanshu"
+    alias: "divyanshu-iitian"
+version: 0.2.0
+date-released: 2026-07-24
+url: "https://divyanshu-iitian.github.io/SearchForge/"
+repository-code: "https://github.com/divyanshu-iitian/SearchForge"
+license: MIT
+keywords:
+  - web search
+  - model context protocol
+  - retrieval-augmented generation
+  - large language models
+  - AI agents
+  - SearXNG

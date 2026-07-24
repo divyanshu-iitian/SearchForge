@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SearchForge | Open-source web search API and MCP server for LLMs</title>
+    <meta
+      name="description"
+      content="SearchForge is a free, open-source web search API and MCP server for LLMs, AI agents, and RAG pipelines. Use SearXNG, GitHub, Crossref, Wikipedia, and Hacker News through one retrieval gateway."
+    >
+    <meta
+      name="keywords"
+      content="SearchForge, open source web search API, MCP search server, LLM web search, AI agent search, RAG web search, SearXNG API, free search API"
+    >
+    <meta name="author" content="Divyanshu">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0d1117">
+    <link rel="icon" href="data:,">
+    <link rel="canonical" href="https://divyanshu-iitian.github.io/SearchForge/">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="alternate" type="text/plain" href="./llms.txt" title="SearchForge llms.txt">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SearchForge">
+    <meta
+      property="og:title"
+      content="SearchForge | Free web search for LLMs, agents, and RAG"
+    >
+    <meta
+      property="og:description"
+      content="A self-hostable search and web-reading gateway with MCP, REST, CLI, and TypeScript interfaces."
+    >
+    <meta property="og:url" content="https://divyanshu-iitian.github.io/SearchForge/">
+    <meta
+      property="og:image"
+      content="https://opengraph.githubassets.com/1/divyanshu-iitian/SearchForge"
+    >
+    <meta name="twitter:card" content="summary_large_image">
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": ["SoftwareApplication", "SoftwareSourceCode"],
+        "name": "SearchForge",
+        "alternateName": "searchforge-rag",
+        "description": "Free, open-source web search API and MCP server for LLMs, AI agents, and RAG pipelines.",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Search API and Model Context Protocol server",
+        "operatingSystem": "Cross-platform",
+        "programmingLanguage": "TypeScript",
+        "runtimePlatform": "Node.js 20 or newer",
+        "codeRepository": "https://github.com/divyanshu-iitian/SearchForge",
+        "downloadUrl": "https://github.com/divyanshu-iitian/SearchForge/releases/latest",
+        "license": "https://opensource.org/license/mit",
+        "isAccessibleForFree": true,
+        "author": {
+          "@type": "Person",
+          "name": "Divyanshu",
+          "url": "https://github.com/divyanshu-iitian"
+        },
+        "keywords": [
+          "web search API",
+          "MCP server",
+          "LLM tools",
+          "AI agents",
+          "retrieval augmented generation",
+          "SearXNG",
+          "open source"
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="SearchForge home">SearchForge</a>
+      <nav aria-label="Primary navigation">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#interfaces">Interfaces</a>
+        <a href="https://github.com/divyanshu-iitian/SearchForge#quick-start">Docs</a>
+        <a class="nav-cta" href="https://github.com/divyanshu-iitian/SearchForge">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Open-source retrieval infrastructure</p>
+          <h1>Web search for every LLM.</h1>
+          <p class="lede">
+            One self-hostable search API for agents and RAG, with no-key sources,
+            citations, and partial-failure resilience.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/divyanshu-iitian/SearchForge">
+              View on GitHub
+            </a>
+            <a
+              class="button secondary"
+              href="https://github.com/divyanshu-iitian/SearchForge#quick-start"
+            >
+              Quick start
+            </a>
+          </div>
+        </div>
+
+        <figure class="result-preview">
+          <figcaption>Structured evidence, ready for an agent</figcaption>
+          <pre><code>{
+  "query": "open source rerankers",
+  "category": "academic",
+  "results": [{
+    "title": "Example work",
+    "url": "https://doi.org/...",
+    "source": "crossref",
+    "score": 0.016393
+  }],
+  "providers": [{
+    "provider": "crossref",
+    "ok": true
+  }]
+}</code></pre>
+        </figure>
+      </section>
+
+      <section class="source-rail" aria-label="Supported search sources">
+        <span>SearXNG</span>
+        <span>Wikipedia</span>
+        <span>GitHub</span>
+        <span>Crossref</span>
+        <span>Hacker News</span>
+      </section>
+
+      <section class="capabilities" id="capabilities">
+        <div class="section-intro">
+          <h2>Search by intent, not vendor.</h2>
+          <p>
+            SearchForge routes each query to relevant sources, normalizes the evidence,
+            removes duplicate URLs, and preserves every contributing citation.
+          </p>
+        </div>
+
+        <div class="capability-grid">
+          <article class="capability capability-wide">
+            <h3>Web</h3>
+            <p>Run private metasearch through SearXNG with Wikipedia as a no-key fallback.</p>
+            <code>category: "web"</code>
+          </article>
+          <article class="capability">
+            <h3>Code</h3>
+            <p>Find repositories and implementation references through GitHub search.</p>
+            <code>category: "code"</code>
+          </article>
+          <article class="capability capability-accent">
+            <h3>Academic</h3>
+            <p>Retrieve papers, DOI metadata, authors, and publication details from Crossref.</p>
+            <code>category: "academic"</code>
+          </article>
+          <article class="capability">
+            <h3>Community</h3>
+            <p>Search technical discussions and launch posts through Hacker News.</p>
+            <code>category: "community"</code>
+          </article>
+          <article class="capability capability-wide">
+            <h3>Read URL</h3>
+            <p>Turn a public page into bounded, LLM-ready Markdown with SSRF protections.</p>
+            <code>read_url("https://example.com")</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="interfaces" id="interfaces">
+        <h2>One retrieval core. Four ways in.</h2>
+        <div class="interface-list">
+          <article>
+            <span class="interface-name">MCP</span>
+            <p>Expose <code>web_search</code>, <code>read_url</code>, and <code>search_status</code> to compatible agents.</p>
+          </article>
+          <article>
+            <span class="interface-name">REST</span>
+            <p>Call a versioned HTTP contract from any language or RAG service.</p>
+          </article>
+          <article>
+            <span class="interface-name">CLI</span>
+            <p>Search, read, and diagnose providers directly from a terminal.</p>
+          </article>
+          <article>
+            <span class="interface-name">TypeScript</span>
+            <p>Embed providers and the routing core inside an existing application.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="quickstart" aria-labelledby="quickstart-title">
+        <div>
+          <h2 id="quickstart-title">Running in four commands.</h2>
+          <p>Node.js 20 or newer. No account is required for the default adapters.</p>
+        </div>
+        <pre><code>git clone https://github.com/divyanshu-iitian/SearchForge.git
+cd SearchForge
+npm install &amp;&amp; npm run build
+node dist/cli.js search "agent frameworks" --category code</code></pre>
+      </section>
+
+      <section class="principles">
+        <div class="principles-copy">
+          <h2>Built for evidence, not generated answers.</h2>
+          <p>
+            SearchForge stays below the reasoning layer. Your model receives structured
+            sources, provenance, health data, and predictable failure behavior.
+          </p>
+          <a href="https://github.com/divyanshu-iitian/SearchForge#how-it-works">
+            Read the architecture
+          </a>
+        </div>
+        <dl>
+          <div>
+            <dt>No telemetry</dt>
+            <dd>Queries stay with the providers you configure.</dd>
+          </div>
+          <div>
+            <dt>Partial results</dt>
+            <dd>One provider outage cannot erase healthy evidence.</dd>
+          </div>
+          <div>
+            <dt>Stable contracts</dt>
+            <dd>Versioned response shapes across REST, MCP, and TypeScript.</dd>
+          </div>
+          <div>
+            <dt>Self-hosted path</dt>
+            <dd>A private SearXNG stack is included for broad web metasearch.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="closing">
+        <h2>Open web retrieval for your next agent.</h2>
+        <p>MIT licensed. No telemetry. No mandatory paid search provider.</p>
+        <a class="button primary" href="https://github.com/divyanshu-iitian/SearchForge">
+          View on GitHub
+        </a>
+      </section>
+    </main>
+
+    <footer>
+      <span>SearchForge</span>
+      <div>
+        <a href="./llms.txt">llms.txt</a>
+        <a href="https://github.com/divyanshu-iitian/SearchForge/blob/main/SECURITY.md">Security</a>
+        <a href="https://github.com/divyanshu-iitian/SearchForge/blob/main/LICENSE">MIT license</a>
+      </div>
+    </footer>
+  </body>
+</html>

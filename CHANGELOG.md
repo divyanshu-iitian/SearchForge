@@ -2,6 +2,18 @@
 
 All notable changes are documented here.
 
+## Unreleased
+
+### Added
+
+- Crawlable project website with structured software metadata
+- `llms.txt`, sitemap, robots policy, and citation metadata
+- Official MCP Registry namespace metadata for a future npm release
+
+### Changed
+
+- README and package metadata now describe SearchForge with exact search terms
+
 ## 0.2.0 - 2026-07-24
 
 ### Added

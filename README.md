@@ -2,22 +2,23 @@
 
 # SearchForge
 
-### Free search and web reading for every LLM, agent, and RAG pipeline.
+### Open-source web search API and MCP server for LLMs, agents, and RAG.
 
 [![CI](https://github.com/divyanshu-iitian/SearchForge/actions/workflows/ci.yml/badge.svg)](https://github.com/divyanshu-iitian/SearchForge/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-3_tools-8b5cf6)](https://modelcontextprotocol.io)
+[![Website](https://img.shields.io/badge/docs-SearchForge-087a54)](https://divyanshu-iitian.github.io/SearchForge/)
 
 **One local gateway. Four search capabilities. Clean Markdown. REST, MCP, CLI, and TypeScript.**
 
-[Quick start](#quick-start) · [Free tools](#free-tools) · [MCP](#mcp) · [API](#rest-api) · [Design](#how-it-works)
+[Website](https://divyanshu-iitian.github.io/SearchForge/) · [Quick start](#quick-start) · [Free tools](#free-tools) · [MCP](#mcp) · [API](#rest-api) · [Design](#how-it-works)
 
 </div>
 
 ---
 
-SearchForge gives agents a small, predictable retrieval layer without forcing every project to integrate a paid search vendor. It routes a query to the right source, isolates provider failures, deduplicates URLs, fuses rankings, and can turn a public page into LLM-ready Markdown.
+**SearchForge is a free, open-source web search API and MCP server for LLMs, AI agents, and retrieval-augmented generation (RAG) pipelines.** It provides a predictable retrieval layer without forcing every project to integrate a paid search vendor. SearchForge routes each query to the right source, isolates provider failures, deduplicates URLs, fuses rankings, and turns public pages into LLM-ready Markdown.
 
 It does **not** generate answers, hide citations, scrape public SearXNG instances, or send telemetry.
 
