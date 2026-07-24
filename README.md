@@ -9,6 +9,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-3_tools-8b5cf6)](https://modelcontextprotocol.io)
 [![Website](https://img.shields.io/badge/docs-SearchForge-087a54)](https://divyanshu-iitian.github.io/SearchForge/)
+[![Official MCP Registry](https://img.shields.io/badge/MCP_Registry-active-087a54)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.divyanshu-iitian/searchforge)
 
 **One local gateway. Four search capabilities. Clean Markdown. REST, MCP, CLI, and TypeScript.**
 
@@ -116,6 +117,27 @@ SearchForge exposes three stdio tools:
 ```
 
 The search and status tools return MCP structured content as well as readable text.
+
+SearchForge is also published in the
+[official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.divyanshu-iitian/searchforge)
+as `io.github.divyanshu-iitian/searchforge`. To run the registry-backed OCI image
+directly from any MCP client that supports a Docker command:
+
+```json
+{
+  "mcpServers": {
+    "searchforge": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "ghcr.io/divyanshu-iitian/searchforge-mcp:0.2.0"
+      ]
+    }
+  }
+}
+```
 
 ## REST API
 

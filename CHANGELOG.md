@@ -14,6 +14,7 @@ All notable changes are documented here.
 ### Changed
 
 - README and package metadata now describe SearchForge with exact search terms
+- README links to the active official MCP Registry entry and published OCI image
 
 ## 0.2.0 - 2026-07-24
 
