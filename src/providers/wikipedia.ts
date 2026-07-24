@@ -1,5 +1,5 @@
 import { fetchJson } from "../http-client.js";
-import type { ProviderResult, SearchProvider, SearchRequest } from "../types.js";
+import type { NormalizedSearchRequest, ProviderResult, SearchProvider } from "../types.js";
 
 interface WikipediaResponse {
   query?: {
@@ -23,8 +23,11 @@ function stripMarkup(value: string): string {
 
 export class WikipediaProvider implements SearchProvider {
   readonly name = "wikipedia";
+  readonly categories = ["web"] as const;
+  readonly access = "no-key" as const;
+  readonly description = "Encyclopedic search through Wikimedia's public API.";
 
-  async search(request: Required<Omit<SearchRequest, "providers">>): Promise<ProviderResult[]> {
+  async search(request: NormalizedSearchRequest, signal?: AbortSignal): Promise<ProviderResult[]> {
     const language = /^[a-z]{2,3}$/i.test(request.language) ? request.language.toLowerCase() : "en";
     const url = new URL(`https://${language}.wikipedia.org/w/api.php`);
     url.searchParams.set("action", "query");
@@ -34,12 +37,17 @@ export class WikipediaProvider implements SearchProvider {
     url.searchParams.set("format", "json");
     url.searchParams.set("origin", "*");
 
-    const payload = await fetchJson<WikipediaResponse>(this.name, url);
+    const payload = await fetchJson<WikipediaResponse>(this.name, url, signal ? { signal } : {});
     return (payload.query?.search ?? []).map((item) => ({
       title: item.title,
       url: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`,
       snippet: stripMarkup(item.snippet),
       ...(item.timestamp ? { publishedAt: item.timestamp } : {}),
     }));
+  }
+
+  async health(signal?: AbortSignal): Promise<void> {
+    const url = new URL("https://en.wikipedia.org/w/api.php?action=query&meta=siteinfo&format=json&origin=*");
+    await fetchJson(this.name, url, signal ? { signal } : {});
   }
 }

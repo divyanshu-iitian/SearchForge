@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BraveProvider } from "../src/providers/brave.js";
+import { CrossrefProvider } from "../src/providers/crossref.js";
+import { GithubProvider } from "../src/providers/github.js";
+import { HackerNewsProvider } from "../src/providers/hackernews.js";
 import { SearxngProvider } from "../src/providers/searxng.js";
 import { WikipediaProvider } from "../src/providers/wikipedia.js";
 
@@ -9,6 +12,7 @@ const request = {
   language: "en",
   freshness: "month" as const,
   safeSearch: "moderate" as const,
+  category: "web" as const,
 };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -61,5 +65,64 @@ describe("provider adapters", () => {
 
     await expect(new WikipediaProvider().search(request))
       .rejects.toThrow("HTTP 429; retry after 5s");
+  });
+
+  it("normalizes public GitHub repository search without requiring a token", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        full_name: "owner/project",
+        html_url: "https://github.com/owner/project",
+        description: "Useful agent tool",
+        language: "TypeScript",
+        stargazers_count: 42,
+        updated_at: "2026-07-01T00:00:00Z",
+      }],
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const results = await new GithubProvider().search({ ...request, category: "code" });
+
+    expect(results[0]).toMatchObject({
+      title: "owner/project",
+      snippet: "Useful agent tool · TypeScript · 42 stars",
+    });
+    expect(fetchMock.mock.calls[0]?.[1]).not.toMatchObject({
+      headers: expect.objectContaining({ authorization: expect.anything() }),
+    });
+  });
+
+  it("normalizes Crossref scholarly metadata", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      message: { items: [{
+        title: ["Retrieval systems"],
+        DOI: "10.1000/example",
+        publisher: "Example Press",
+        author: [{ given: "Ada", family: "Lovelace" }],
+        published: { "date-parts": [[2025, 3, 1]] },
+      }] },
+    }), { status: 200 })));
+
+    const results = await new CrossrefProvider("maintainer@example.com")
+      .search({ ...request, category: "academic" });
+
+    expect(results[0]).toMatchObject({
+      title: "Retrieval systems",
+      url: "https://doi.org/10.1000/example",
+      publishedAt: "2025-01-01",
+    });
+  });
+
+  it("falls back to a Hacker News discussion URL", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      hits: [{ objectID: "123", story_title: "Agent search", comment_text: "<p>Useful thread</p>" }],
+    }), { status: 200 })));
+
+    const results = await new HackerNewsProvider().search({ ...request, category: "community" });
+
+    expect(results[0]).toMatchObject({
+      title: "Agent search",
+      url: "https://news.ycombinator.com/item?id=123",
+      snippet: "Useful thread",
+    });
   });
 });

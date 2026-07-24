@@ -1,14 +1,22 @@
 import { TtlCache } from "./cache.js";
 import { SearchForgeError } from "./errors.js";
 import {
+  DOCTOR_SCHEMA_VERSION,
+  READ_SCHEMA_VERSION,
   SEARCH_SCHEMA_VERSION,
+  type DoctorProviderStatus,
+  type DoctorResponse,
+  type ProviderInfo,
   type ProviderResult,
+  type ReadResponse,
+  type NormalizedSearchRequest,
   type SearchForgeOptions,
   type SearchProvider,
   type SearchRequest,
   type SearchResponse,
   type SearchResult,
 } from "./types.js";
+import { validatePublicUrl } from "./readers/jina.js";
 
 const DEFAULTS = {
   limit: 8,
@@ -17,7 +25,7 @@ const DEFAULTS = {
   safeSearch: "moderate",
 } as const;
 
-function normalizeRequest(request: SearchRequest): Required<Omit<SearchRequest, "providers">> {
+function normalizeRequest(request: SearchRequest): NormalizedSearchRequest {
   const query = request.query?.trim();
   if (!query || query.length > 500) {
     throw new SearchForgeError("query must contain 1-500 characters", "INVALID_REQUEST", 400);
@@ -34,6 +42,10 @@ function normalizeRequest(request: SearchRequest): Required<Omit<SearchRequest, 
   if (!["off", "moderate", "strict"].includes(safeSearch)) {
     throw new SearchForgeError("safeSearch must be off, moderate, or strict", "INVALID_REQUEST", 400);
   }
+  const category = request.category ?? "web";
+  if (!["web", "code", "academic", "community"].includes(category)) {
+    throw new SearchForgeError("category must be web, code, academic, or community", "INVALID_REQUEST", 400);
+  }
   if (request.providers !== undefined && (
     !Array.isArray(request.providers)
     || request.providers.length === 0
@@ -47,6 +59,7 @@ function normalizeRequest(request: SearchRequest): Required<Omit<SearchRequest, 
     language: request.language?.trim() || DEFAULTS.language,
     freshness,
     safeSearch,
+    category,
   };
 }
 
@@ -65,11 +78,19 @@ function canonicalUrl(raw: string): string {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, provider: string): Promise<T> {
+function withTimeout<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  provider: string,
+): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${provider} timed out after ${timeoutMs}ms`)), timeoutMs);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`${provider} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
     timer.unref?.();
-    promise.then(
+    operation(controller.signal).then(
       (value) => {
         clearTimeout(timer);
         resolve(value);
@@ -122,6 +143,8 @@ export class SearchForge {
   private readonly providers: SearchProvider[];
   private readonly timeoutMs: number;
   private readonly cache: TtlCache<SearchResponse>;
+  private readonly readCache: TtlCache<ReadResponse>;
+  private readonly reader: SearchForgeOptions["reader"];
 
   constructor(options: SearchForgeOptions) {
     if (options.providers.length === 0) {
@@ -130,10 +153,21 @@ export class SearchForge {
     this.providers = options.providers;
     this.timeoutMs = options.timeoutMs ?? 8_000;
     this.cache = new TtlCache(options.cacheTtlMs ?? 300_000, options.cacheMaxEntries ?? 500);
+    this.readCache = new TtlCache(options.cacheTtlMs ?? 300_000, options.cacheMaxEntries ?? 500);
+    this.reader = options.reader;
   }
 
   providerNames(): string[] {
     return this.providers.map((provider) => provider.name);
+  }
+
+  providerInfo(): ProviderInfo[] {
+    return this.providers.map((provider) => ({
+      name: provider.name,
+      categories: provider.categories ?? ["web"],
+      access: provider.access ?? "api-key",
+      ...(provider.description ? { description: provider.description } : {}),
+    }));
   }
 
   async search(input: SearchRequest): Promise<SearchResponse> {
@@ -141,7 +175,7 @@ export class SearchForge {
     const requestedProviders = input.providers as string[] | undefined;
     const selected = requestedProviders
       ? this.providers.filter((provider) => requestedProviders.includes(provider.name))
-      : this.providers;
+      : this.providers.filter((provider) => (provider.categories ?? ["web"]).includes(request.category));
     if (selected.length === 0) {
       throw new SearchForgeError("none of the requested providers are configured", "INVALID_REQUEST", 400);
     }
@@ -154,7 +188,11 @@ export class SearchForge {
     const settled = await Promise.all(selected.map(async (provider) => {
       const providerStartedAt = Date.now();
       try {
-        const results = await withTimeout(provider.search(request), this.timeoutMs, provider.name);
+        const results = await withTimeout(
+          (signal) => provider.search(request, signal),
+          this.timeoutMs,
+          provider.name,
+        );
         return {
           status: {
             provider: provider.name,
@@ -181,6 +219,7 @@ export class SearchForge {
     const response: SearchResponse = {
       schemaVersion: SEARCH_SCHEMA_VERSION,
       query: request.query,
+      category: request.category,
       results: fuse(settled.map((item) => item.ranked), request.limit),
       providers: settled.map((item) => item.status),
       tookMs: Date.now() - startedAt,
@@ -188,5 +227,77 @@ export class SearchForge {
     };
     this.cache.set(key, response);
     return response;
+  }
+
+  async read(rawUrl: string): Promise<ReadResponse> {
+    if (!this.reader) {
+      throw new SearchForgeError("no content reader is configured", "CONFIGURATION_ERROR", 503);
+    }
+    const url = validatePublicUrl(rawUrl);
+    const key = url.toString();
+    const cached = this.readCache.get(key);
+    if (cached) return { ...cached, cached: true };
+    const startedAt = Date.now();
+    const content = await withTimeout(
+      (signal) => this.reader!.read(url, signal),
+      this.timeoutMs,
+      this.reader.name,
+    );
+    const response: ReadResponse = {
+      schemaVersion: READ_SCHEMA_VERSION,
+      url: key,
+      content,
+      reader: this.reader.name,
+      tookMs: Date.now() - startedAt,
+      cached: false,
+    };
+    this.readCache.set(key, response);
+    return response;
+  }
+
+  async doctor(): Promise<DoctorResponse> {
+    const startedAt = Date.now();
+    const providers = await Promise.all(this.providers.map(async (provider): Promise<DoctorProviderStatus> => {
+      const providerStartedAt = Date.now();
+      const info = this.providerInfo().find((item) => item.name === provider.name)!;
+      try {
+        if (provider.health) {
+          await withTimeout((signal) => provider.health!(signal), this.timeoutMs, provider.name);
+        }
+        return { ...info, ok: true, latencyMs: Date.now() - providerStartedAt };
+      } catch (error) {
+        return {
+          ...info,
+          ok: false,
+          latencyMs: Date.now() - providerStartedAt,
+          error: error instanceof Error ? error.message : "unknown provider error",
+        };
+      }
+    }));
+    let reader: DoctorResponse["reader"];
+    if (this.reader) {
+      const readerStartedAt = Date.now();
+      try {
+        if (this.reader.health) {
+          await withTimeout((signal) => this.reader!.health!(signal), this.timeoutMs, this.reader.name);
+        }
+        reader = { name: this.reader.name, ok: true, latencyMs: Date.now() - readerStartedAt };
+      } catch (error) {
+        reader = {
+          name: this.reader.name,
+          ok: false,
+          latencyMs: Date.now() - readerStartedAt,
+          error: error instanceof Error ? error.message : "unknown reader error",
+        };
+      }
+    }
+    const healthy = providers.every((provider) => provider.ok) && (!reader || reader.ok);
+    return {
+      schemaVersion: DOCTOR_SCHEMA_VERSION,
+      status: healthy ? "ok" : "degraded",
+      providers,
+      ...(reader ? { reader } : {}),
+      tookMs: Date.now() - startedAt,
+    };
   }
 }

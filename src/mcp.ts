@@ -7,7 +7,7 @@ import { createSearchForgeFromEnv } from "./config.js";
 const searchForge = createSearchForgeFromEnv();
 const server = new McpServer({
   name: "searchforge",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 server.registerTool(
@@ -21,6 +21,7 @@ server.registerTool(
       language: z.string().default("en"),
       freshness: z.enum(["day", "week", "month", "year"]).default("month"),
       safeSearch: z.enum(["off", "moderate", "strict"]).default("moderate"),
+      category: z.enum(["web", "code", "academic", "community"]).default("web"),
       providers: z.array(z.string()).optional(),
     },
   },
@@ -31,8 +32,41 @@ server.registerTool(
       language: input.language,
       freshness: input.freshness,
       safeSearch: input.safeSearch,
+      category: input.category,
       ...(input.providers ? { providers: input.providers } : {}),
     });
+    return {
+      content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
+      structuredContent: response as unknown as Record<string, unknown>,
+    };
+  },
+);
+
+server.registerTool(
+  "read_url",
+  {
+    title: "Read a web page",
+    description: "Turn a public HTTP or HTTPS page into clean, LLM-ready Markdown without an API key.",
+    inputSchema: { url: z.string().url().max(2048) },
+  },
+  async ({ url }) => {
+    const response = await searchForge.read(url);
+    return {
+      content: [{ type: "text", text: response.content }],
+      structuredContent: response as unknown as Record<string, unknown>,
+    };
+  },
+);
+
+server.registerTool(
+  "search_status",
+  {
+    title: "Check SearchForge capabilities",
+    description: "Probe configured search providers and the URL reader, returning latency and failures.",
+    inputSchema: {},
+  },
+  async () => {
+    const response = await searchForge.doctor();
     return {
       content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
       structuredContent: response as unknown as Record<string, unknown>,

@@ -12,7 +12,9 @@ Please use GitHub's private vulnerability reporting for this repository. Do not 
 
 Search results are untrusted internet content. SearchForge normalizes metadata but does not claim that titles, snippets, URLs, or dates are safe or true. RAG applications must delimit retrieved text, preserve citations, and defend against prompt injection.
 
-SearchForge does not fetch result pages, execute returned content, call an LLM, or collect telemetry.
+SearchForge does not execute returned content, call an LLM, or collect telemetry. The optional `read_url` capability sends the requested public URL to Jina Reader and returns its Markdown response. Do not use it for private, authenticated, or secret-bearing URLs.
+
+`read_url` rejects credentials, non-HTTP protocols, localhost names, and private IP literals. The content is size-bounded and treated as untrusted. Deployments with stricter requirements should also enforce an outbound hostname allowlist at the network boundary.
 
 For public deployments:
 
@@ -22,3 +24,4 @@ For public deployments:
 - replace the example SearXNG secret;
 - apply network egress controls appropriate to your providers;
 - use a distributed rate limiter when running multiple replicas.
+- review third-party provider privacy and retention policies before sending sensitive queries.

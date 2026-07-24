@@ -109,7 +109,12 @@ export function startServer(searchForge: SearchForge, options: ServerOptions) {
       }
 
       if (request.method === "GET" && url.pathname === "/v1/providers") {
-        sendJson(response, 200, { providers: searchForge.providerNames() }, requestId);
+        sendJson(response, 200, { providers: searchForge.providerInfo() }, requestId);
+        log(200);
+        return;
+      }
+      if (request.method === "GET" && url.pathname === "/v1/doctor") {
+        sendJson(response, 200, await searchForge.doctor(), requestId);
         log(200);
         return;
       }
@@ -120,6 +125,15 @@ export function startServer(searchForge: SearchForge, options: ServerOptions) {
         }
         const result = await searchForge.search(body as SearchRequest);
         sendJson(response, 200, result, requestId);
+        log(200);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/v1/read") {
+        const body = await readJson(request);
+        if (!body || typeof body !== "object" || Array.isArray(body) || typeof (body as { url?: unknown }).url !== "string") {
+          throw new SearchForgeError("request body must contain a url string", "INVALID_REQUEST", 400);
+        }
+        sendJson(response, 200, await searchForge.read((body as { url: string }).url), requestId);
         log(200);
         return;
       }

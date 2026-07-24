@@ -1,27 +1,58 @@
 openapi: 3.1.0
 info:
   title: SearchForge API
-  version: 0.1.0
-  description: Provider-neutral web search for LLMs, agents, and RAG.
+  version: 0.2.0
+  description: Free search and web reading for LLMs, agents, and RAG.
+  license:
+    name: MIT
+    identifier: MIT
 servers:
   - url: http://localhost:3000
 paths:
   /healthz:
     get:
+      summary: Check process liveness
       operationId: health
       security: []
       responses:
         "200":
-          description: Service is alive.
+          description: Process is alive.
   /v1/providers:
     get:
+      summary: List configured retrieval capabilities
       operationId: listProviders
       responses:
         "200":
-          description: Configured provider names.
+          description: Configured provider capabilities and access tiers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [providers]
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProviderInfo"
+        "401":
+          description: Missing or invalid API key.
+  /v1/doctor:
+    get:
+      summary: Probe configured dependencies
+      operationId: doctor
+      responses:
+        "200":
+          description: Live dependency health and latency.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoctorResponse"
+        "401":
+          description: Missing or invalid API key.
   /v1/search:
     post:
-      operationId: searchWeb
+      summary: Search a retrieval capability
+      operationId: search
       requestBody:
         required: true
         content:
@@ -30,7 +61,7 @@ paths:
               $ref: "#/components/schemas/SearchRequest"
       responses:
         "200":
-          description: Ranked evidence from available providers.
+          description: Ranked evidence from matching providers.
           content:
             application/json:
               schema:
@@ -41,6 +72,32 @@ paths:
           description: Missing or invalid API key.
         "429":
           description: Rate limit exceeded.
+  /v1/read:
+    post:
+      summary: Convert a public web page to Markdown
+      operationId: readUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              additionalProperties: false
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+      responses:
+        "200":
+          description: LLM-ready Markdown for a public URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResponse"
+        "400":
+          description: Invalid or non-public URL.
 components:
   securitySchemes:
     bearerAuth:
@@ -56,6 +113,10 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        category:
+          type: string
+          enum: [web, code, academic, community]
+          default: web
         limit:
           type: integer
           minimum: 1
@@ -74,6 +135,7 @@ components:
           default: moderate
         providers:
           type: array
+          minItems: 1
           items:
             type: string
     SearchResult:
@@ -99,12 +161,15 @@ components:
           type: number
     SearchResponse:
       type: object
-      required: [schemaVersion, query, results, providers, tookMs, cached]
+      required: [schemaVersion, query, category, results, providers, tookMs, cached]
       properties:
         schemaVersion:
           const: "1.0"
         query:
           type: string
+        category:
+          type: string
+          enum: [web, code, academic, community]
         results:
           type: array
           items:
@@ -113,6 +178,76 @@ components:
           type: array
           items:
             type: object
+        tookMs:
+          type: integer
+        cached:
+          type: boolean
+    ProviderInfo:
+      type: object
+      required: [name, categories, access]
+      properties:
+        name:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+            enum: [web, code, academic, community]
+        access:
+          type: string
+          enum: [no-key, self-hosted, api-key]
+        description:
+          type: string
+    DoctorResponse:
+      type: object
+      required: [schemaVersion, status, providers, tookMs]
+      properties:
+        schemaVersion:
+          const: "1.0"
+        status:
+          type: string
+          enum: [ok, degraded]
+        providers:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ProviderInfo"
+              - type: object
+                required: [ok, latencyMs]
+                properties:
+                  ok:
+                    type: boolean
+                  latencyMs:
+                    type: integer
+                  error:
+                    type: string
+        reader:
+          type: object
+          required: [name, ok, latencyMs]
+          properties:
+            name:
+              type: string
+            ok:
+              type: boolean
+            latencyMs:
+              type: integer
+            error:
+              type: string
+        tookMs:
+          type: integer
+    ReadResponse:
+      type: object
+      required: [schemaVersion, url, content, reader, tookMs, cached]
+      properties:
+        schemaVersion:
+          const: "1.0"
+        url:
+          type: string
+          format: uri
+        content:
+          type: string
+        reader:
+          type: string
         tookMs:
           type: integer
         cached:

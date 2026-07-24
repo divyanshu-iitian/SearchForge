@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { SearchForge } from "../src/searchforge.js";
-import type { SearchProvider } from "../src/types.js";
+import type { ContentReader, SearchProvider } from "../src/types.js";
 
 function provider(name: string, results: Array<{ title: string; url: string; snippet: string }>): SearchProvider {
   return { name, search: vi.fn().mockResolvedValue(results) };
@@ -79,5 +79,56 @@ describe("SearchForge", () => {
       .rejects.toMatchObject({ code: "INVALID_REQUEST" });
     await expect(forge.search({ query: "ok", providers: "source" as never }))
       .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(forge.search({ query: "ok", category: "images" as never }))
+      .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  });
+
+  it("routes requests by capability while explicit providers override the category", async () => {
+    const web = { ...provider("web", []), categories: ["web"] as const };
+    const code = { ...provider("code", []), categories: ["code"] as const };
+    const forge = new SearchForge({ providers: [web, code] });
+
+    await forge.search({ query: "routing", category: "code" });
+    await forge.search({ query: "override", category: "web", providers: ["code"] });
+
+    expect(web.search).not.toHaveBeenCalled();
+    expect(code.search).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads and caches public URLs but rejects local targets", async () => {
+    const reader: ContentReader = {
+      name: "fixture-reader",
+      read: vi.fn().mockResolvedValue("# Clean content"),
+    };
+    const forge = new SearchForge({ providers: [provider("source", [])], reader });
+
+    const first = await forge.read("https://example.com/article");
+    const second = await forge.read("https://example.com/article");
+
+    expect(first.content).toBe("# Clean content");
+    expect(second.cached).toBe(true);
+    expect(reader.read).toHaveBeenCalledTimes(1);
+    await expect(forge.read("http://127.0.0.1/admin"))
+      .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(forge.read("file:///etc/passwd"))
+      .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  });
+
+  it("reports degraded doctor status without hiding healthy capabilities", async () => {
+    const healthy: SearchProvider = {
+      ...provider("healthy", []),
+      health: vi.fn().mockResolvedValue(undefined),
+    };
+    const broken: SearchProvider = {
+      ...provider("broken", []),
+      health: vi.fn().mockRejectedValue(new Error("unreachable")),
+    };
+    const response = await new SearchForge({ providers: [healthy, broken] }).doctor();
+
+    expect(response.status).toBe("degraded");
+    expect(response.providers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "healthy", ok: true }),
+      expect.objectContaining({ name: "broken", ok: false, error: "unreachable" }),
+    ]));
   });
 });

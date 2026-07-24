@@ -2,155 +2,103 @@
 
 # SearchForge
 
-### One open web-search layer for every LLM, agent, and RAG pipeline.
+### Free search and web reading for every LLM, agent, and RAG pipeline.
 
 [![CI](https://github.com/divyanshu-iitian/SearchForge/actions/workflows/ci.yml/badge.svg)](https://github.com/divyanshu-iitian/SearchForge/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](package.json)
-[![MCP](https://img.shields.io/badge/MCP-ready-8b5cf6)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-3_tools-8b5cf6)](https://modelcontextprotocol.io)
 
-**Self-host with SearXNG. Add optional providers. Get clean, ranked, citation-ready JSON through REST, MCP, CLI, or a TypeScript SDK.**
+**One local gateway. Four search capabilities. Clean Markdown. REST, MCP, CLI, and TypeScript.**
 
-[Quick start](#quick-start) · [MCP setup](#mcp) · [REST API](#rest-api) · [Architecture](#how-it-works) · [Contributing](CONTRIBUTING.md)
+[Quick start](#quick-start) · [Free tools](#free-tools) · [MCP](#mcp) · [API](#rest-api) · [Design](#how-it-works)
 
 </div>
 
 ---
 
-LLMs do not need another answer engine. They need **reliable search evidence**.
+SearchForge gives agents a small, predictable retrieval layer without forcing every project to integrate a paid search vendor. It routes a query to the right source, isolates provider failures, deduplicates URLs, fuses rankings, and can turn a public page into LLM-ready Markdown.
 
-SearchForge is a provider-neutral search gateway for developers building RAG, agents, research assistants, and local AI systems. It queries multiple search backends concurrently, survives partial outages, removes duplicate URLs, fuses rankings, and returns a stable response with source provenance.
+It does **not** generate answers, hide citations, scrape public SearXNG instances, or send telemetry.
 
-It does **not** call an LLM, generate uncited prose, track users, or lock your application to one search vendor.
+## What you get
 
-## Why SearchForge?
+| Capability | Default source | Cost / credentials |
+|---|---|---|
+| `web` | Wikipedia; optional private SearXNG | No key / self-hosted |
+| `code` | GitHub repository search | No key; token optional |
+| `academic` | Crossref works and DOI metadata | No key |
+| `community` | Hacker News via Algolia | No key, community service |
+| `read_url` | Jina Reader | No key, currently rate-limited |
 
-| Problem | SearchForge |
-|---|---|
-| Every search API has a different schema | One versioned result schema |
-| Free public instances are unreliable | Self-hosted SearXNG is the primary path |
-| One provider outage breaks the RAG request | Partial failures are isolated and reported |
-| Results repeat across providers | Canonical URL deduplication |
-| Rank values cannot be compared directly | Reciprocal Rank Fusion |
-| Agent integrations are fragmented | REST + MCP + CLI + TypeScript |
-| Search calls become an uncontrolled cost | TTL cache, limits, timeouts, provider selection |
+SearchForge starts with all no-key adapters enabled. A GitHub token only raises the public API quota, and Brave remains an optional keyed backend. Broad, independent web metasearch is provided by the included SearXNG stack.
 
 ## Quick start
 
-### The recommended path: SearchForge + SearXNG
+### Zero-key local CLI
 
 ```bash
 git clone https://github.com/divyanshu-iitian/SearchForge.git
 cd SearchForge
-docker compose up --build
+npm install
+npm run build
+
+node dist/cli.js search "open source agent frameworks" --category code
+node dist/cli.js search "retrieval augmented generation" --category academic
+node dist/cli.js search "local LLM tooling" --category community
+node dist/cli.js read "https://example.com"
+node dist/cli.js doctor
 ```
 
-Search:
+### Full web search with private SearXNG
+
+```bash
+docker compose up --build
+```
 
 ```bash
 curl -s http://localhost:3000/v1/search \
   -H "content-type: application/json" \
-  -d '{"query":"open source vector databases","limit":5}'
+  -d '{"query":"open source vector databases","category":"web","limit":5}'
 ```
 
-This starts:
+This starts SearchForge on port `3000` and a private, JSON-enabled SearXNG on port `8080`. Before exposing the stack, change the SearXNG secret, set `SEARCHFORGE_API_KEY`, and terminate TLS at a trusted proxy.
 
-- SearchForge at `http://localhost:3000`
-- a private SearXNG instance at `http://localhost:8080`
-- JSON search enabled for machine consumption
-- health checks and automatic restarts
+## Free tools
 
-> Before exposing this stack publicly, replace the SearXNG secret, set `SEARCHFORGE_API_KEY`, and put the service behind TLS.
-
-### Run locally without Docker
+### Search by capability
 
 ```bash
-npm install
-npm run build
-
-# No-key Wikipedia fallback
-node dist/cli.js search "retrieval augmented generation"
-
-# Full web search through your SearXNG instance
-SEARCHFORGE_SEARXNG_URL=http://localhost:8080 node dist/cli.js search "latest MCP specification"
+searchforge search "browser agent" --category code
+searchforge search "semantic reranking" --category academic --json
+searchforge search "Show HN search engine" --category community
 ```
 
-On PowerShell:
+Categories prevent irrelevant providers from being queried. An explicit `providers` list overrides category routing, which is useful for evaluations.
 
-```powershell
-$env:SEARCHFORGE_SEARXNG_URL="http://localhost:8080"
-node dist/cli.js search "latest MCP specification"
-```
-
-## Four integration surfaces
-
-### REST API
-
-```http
-POST /v1/search
-Content-Type: application/json
-Authorization: Bearer your-optional-api-key
-
-{
-  "query": "open source reranking models",
-  "limit": 8,
-  "language": "en",
-  "freshness": "month",
-  "safeSearch": "moderate",
-  "providers": ["searxng", "brave", "wikipedia"]
-}
-```
-
-Response:
-
-```json
-{
-  "schemaVersion": "1.0",
-  "query": "open source reranking models",
-  "results": [
-    {
-      "title": "Example result",
-      "url": "https://example.com/research",
-      "snippet": "A citation-ready passage from the provider.",
-      "source": "searxng",
-      "sources": ["searxng", "brave"],
-      "score": 0.032787
-    }
-  ],
-  "providers": [
-    {
-      "provider": "searxng",
-      "ok": true,
-      "latencyMs": 241,
-      "resultCount": 8
-    }
-  ],
-  "tookMs": 243,
-  "cached": false
-}
-```
-
-Other endpoints:
-
-```text
-GET /healthz       liveness and configured providers
-GET /v1/providers  provider discovery
-```
-
-The full contract is in [openapi.yaml](openapi.yaml).
-
-### MCP
-
-SearchForge exposes a `web_search` tool over stdio using the official Model Context Protocol SDK.
-
-Build once:
+### Read a URL as Markdown
 
 ```bash
-npm install
-npm run build
+searchforge read "https://example.com/article"
 ```
 
-Add it to an MCP-compatible client:
+`read_url` accepts public HTTP(S) URLs only. Credentials, localhost, private IP literals, and non-web protocols are rejected. Responses are size-bounded, timed out, and cached.
+
+### Diagnose the whole retrieval path
+
+```bash
+searchforge doctor
+```
+
+Doctor performs real, bounded probes and reports each provider's access tier, capability, latency, and error. A failed source produces `degraded`, not a misleading all-or-nothing status.
+
+## MCP
+
+SearchForge exposes three stdio tools:
+
+- `web_search` — routed, citation-ready structured search
+- `read_url` — clean Markdown from a public URL
+- `search_status` — live capability and latency report
 
 ```json
 {
@@ -166,144 +114,179 @@ Add it to an MCP-compatible client:
 }
 ```
 
-The tool returns both text content and structured output, so clients can display it or feed it directly into retrieval.
+The search and status tools return MCP structured content as well as readable text.
 
-### TypeScript SDK
+## REST API
+
+### Search
+
+```http
+POST /v1/search
+Content-Type: application/json
+
+{
+  "query": "open source reranking models",
+  "category": "academic",
+  "limit": 8,
+  "language": "en",
+  "freshness": "month",
+  "safeSearch": "moderate"
+}
+```
+
+```json
+{
+  "schemaVersion": "1.0",
+  "query": "open source reranking models",
+  "category": "academic",
+  "results": [
+    {
+      "title": "Example work",
+      "url": "https://doi.org/10.0000/example",
+      "snippet": "Authors · Publisher · journal-article",
+      "source": "crossref",
+      "sources": ["crossref"],
+      "score": 0.016393
+    }
+  ],
+  "providers": [
+    {
+      "provider": "crossref",
+      "ok": true,
+      "latencyMs": 241,
+      "resultCount": 8
+    }
+  ],
+  "tookMs": 243,
+  "cached": false
+}
+```
+
+### Read
+
+```http
+POST /v1/read
+Content-Type: application/json
+
+{"url":"https://example.com/article"}
+```
+
+Other endpoints:
+
+```text
+GET /healthz       Process liveness
+GET /v1/providers  Configured capabilities and access tiers
+GET /v1/doctor     Live dependency health
+```
+
+See the full [OpenAPI contract](openapi.yaml).
+
+## TypeScript SDK
 
 ```ts
 import {
+  CrossrefProvider,
+  GithubProvider,
+  JinaReader,
   SearchForge,
-  SearxngProvider,
-  WikipediaProvider,
 } from "searchforge-rag";
 
-const search = new SearchForge({
-  providers: [
-    new SearxngProvider("http://localhost:8080"),
-    new WikipediaProvider(),
-  ],
+const forge = new SearchForge({
+  providers: [new GithubProvider(), new CrossrefProvider()],
+  reader: new JinaReader(),
   timeoutMs: 8_000,
-  cacheTtlMs: 300_000,
 });
 
-const evidence = await search.search({
-  query: "hybrid retrieval techniques",
+const evidence = await forge.search({
+  query: "agentic retrieval",
+  category: "academic",
   limit: 10,
 });
+
+const page = await forge.read("https://example.com/research");
 ```
 
-Until the npm package is published, install directly from GitHub:
+Until an npm release is published:
 
 ```bash
 npm install github:divyanshu-iitian/SearchForge
 ```
 
-### CLI
+## Provider details
 
-```bash
-searchforge providers
-searchforge search "small language model benchmarks" --limit 5
-searchforge search "AI regulation" --freshness week --json
-searchforge serve --host 0.0.0.0 --port 3000
-```
+| Provider | Capability | Access | Enabled |
+|---|---|---|---|
+| [SearXNG](https://docs.searxng.org/) | Web | Self-hosted, no vendor fee | `SEARCHFORGE_SEARXNG_URL` |
+| Wikipedia | Web knowledge fallback | No key | Always |
+| [GitHub](https://docs.github.com/rest/search/search) | Code repositories | No key; 60 unauthenticated REST requests/hour, search has tighter limits | Always |
+| [Crossref](https://www.crossref.org/documentation/retrieve-metadata/rest-api/) | Academic metadata | No key; `mailto` recommended | Always |
+| [HN Algolia](https://hn.algolia.com/api) | Community | No key; community-operated availability | Always |
+| [Jina Reader](https://jina.ai/reader/) | URL to Markdown | No key; documented no-key quota currently 20 RPM | Always |
+| [Brave Search](https://brave.com/search/api/) | Web | API key | `BRAVE_SEARCH_API_KEY` |
 
-## Providers
-
-| Provider | Key | Role | Enabled when |
-|---|---:|---|---|
-| [SearXNG](https://docs.searxng.org/) | No | Recommended self-hosted full-web metasearch | `SEARCHFORGE_SEARXNG_URL` is set |
-| [Brave Search](https://brave.com/search/api/) | Yes | Independent commercial web index with monthly free credits | `BRAVE_SEARCH_API_KEY` is set |
-| Wikipedia | No | Reliable knowledge fallback, not a full-web index | Always |
-
-Public SearXNG instances commonly disable JSON or rate-limit automation. SearchForge intentionally recommends self-hosting instead of silently abusing community infrastructure.
-
-Adding a provider requires one small adapter:
-
-```ts
-import type { SearchProvider } from "searchforge-rag";
-
-export const myProvider: SearchProvider = {
-  name: "my-provider",
-  async search(request) {
-    return [{
-      title: "Result title",
-      url: "https://example.com",
-      snippet: "Useful evidence",
-    }];
-  },
-};
-```
+SearchForge intentionally does not configure public SearXNG instances. They often disable JSON or limit automated traffic; the Docker stack is the stable free path.
 
 ## How it works
 
 ```text
-RAG / agent / MCP client
-          │
-          ▼
-  validated SearchRequest
-          │
-    ┌─────┼──────────┐
-    ▼     ▼          ▼
- SearXNG Brave   Wikipedia
-    │     │          │
-    └─────┼──────────┘
-          ▼
- normalize → canonicalize → deduplicate → reciprocal-rank fusion
-          │
-          ▼
- versioned evidence + URLs + provider health
+Agent / RAG / MCP client
+           |
+      validate + route
+           |
+  +--------+---------+-----------+
+  |        |         |           |
+ web      code    academic   community       read_url
+  |        |         |           |              |
+SearXNG  GitHub   Crossref   Hacker News    Jina Reader
+Wikipedia
+  +--------+---------+-----------+
+           |
+ normalize -> canonicalize -> deduplicate -> reciprocal-rank fusion
+           |
+ versioned evidence + provenance + per-source health
 ```
 
-Provider calls run concurrently with independent timeouts. A failed provider is recorded in `providers` without discarding healthy results. Duplicate tracking URLs collapse into one result while retaining every contributing provider in `sources`.
+Each idempotent provider call has its own abortable timeout. One outage cannot erase healthy results. Tracking parameters are removed before deduplication, and every contributing provider remains in `sources`.
+
+This capability-first design is inspired by [Agent Reach](https://github.com/Panniantong/Agent-Reach). Agent Reach helps an agent operate many upstream tools directly; SearchForge complements that approach with one stable, embeddable retrieval API for RAG applications.
 
 ## Configuration
 
-| Environment variable | Default | Purpose |
+| Variable | Default | Purpose |
 |---|---:|---|
-| `SEARCHFORGE_SEARXNG_URL` | unset | SearXNG base URL |
-| `BRAVE_SEARCH_API_KEY` | unset | Optional Brave provider |
-| `SEARCHFORGE_API_KEY` | unset | REST bearer or `x-api-key` authentication |
+| `SEARCHFORGE_SEARXNG_URL` | unset | Private SearXNG base URL |
+| `GITHUB_TOKEN` | unset | Optional GitHub quota increase |
+| `CROSSREF_MAILTO` | unset | Crossref polite-pool identity |
+| `BRAVE_SEARCH_API_KEY` | unset | Optional Brave backend |
+| `SEARCHFORGE_API_KEY` | unset | REST bearer or `x-api-key` |
 | `SEARCHFORGE_PORT` | `3000` | REST port |
 | `SEARCHFORGE_HOST` | `127.0.0.1` | Bind address |
-| `SEARCHFORGE_TIMEOUT_MS` | `8000` | Independent provider timeout |
-| `SEARCHFORGE_CACHE_TTL_MS` | `300000` | In-memory result cache TTL |
-| `SEARCHFORGE_CACHE_MAX_ENTRIES` | `500` | Cache size bound |
-| `SEARCHFORGE_RATE_LIMIT` | `60` | Requests per client IP per minute |
+| `SEARCHFORGE_TIMEOUT_MS` | `8000` | Per-dependency timeout |
+| `SEARCHFORGE_CACHE_TTL_MS` | `300000` | In-memory cache TTL |
+| `SEARCHFORGE_CACHE_MAX_ENTRIES` | `500` | Cache entry bound |
+| `SEARCHFORGE_RATE_LIMIT` | `60` | Requests/client/minute |
 
-## Production notes
+## Production boundary
 
 - Set an API key before binding to a public interface.
-- Terminate TLS at a trusted reverse proxy.
-- Keep SearXNG private to the SearchForge network when possible.
-- The built-in cache and rate limiter are process-local. Use an external gateway/cache for multi-replica deployments.
-- Search snippets are **untrusted external input**. Never place them into a system prompt without delimiters and prompt-injection defenses.
-- Provider errors intentionally omit secrets and response bodies.
-- SearchForge retrieves result metadata and snippets; it does not crawl result pages.
+- Search results and page content are untrusted input; delimit them and apply prompt-injection defenses.
+- The built-in cache and rate limiter are process-local. Use shared infrastructure for multiple replicas.
+- Provider bodies and credentials are excluded from surfaced errors.
+- `healthz` proves the process is alive; `/v1/doctor` checks dependencies.
 
-See [SECURITY.md](SECURITY.md) for the threat boundary.
-
-## Roadmap
-
-- [ ] Additional community-reviewed providers
-- [ ] Optional document extraction with strict SSRF protections
-- [ ] Streaming HTTP MCP transport
-- [ ] OpenTelemetry metrics hooks
-- [ ] Persistent Redis-compatible cache adapter
-- [ ] Evaluation fixtures for result quality and freshness
-
-Contributions should improve user outcomes, not inflate the provider count. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+See [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [CHANGELOG.md](CHANGELOG.md).
 
 ## Principles
 
-1. **Evidence over generated answers**
-2. **Self-hosting over hidden dependence**
-3. **Partial results over total failure**
-4. **Stable contracts over clever abstractions**
-5. **Explicit provider provenance**
-6. **No telemetry by default**
+1. Evidence over generated answers
+2. Free and self-hosted paths before vendor lock-in
+3. Partial results over total failure
+4. Honest capability and quota reporting
+5. Stable contracts and explicit provenance
+6. No telemetry by default
 
 ## License
 
-MIT © Divyanshu. See [LICENSE](LICENSE).
+MIT © Divyanshu.
 
-If SearchForge makes your RAG stack simpler, consider starring the repository and sharing a real integration in [Discussions](https://github.com/divyanshu-iitian/SearchForge/discussions).
+If SearchForge helps your agent, star the repository and share your integration in [Discussions](https://github.com/divyanshu-iitian/SearchForge/discussions).

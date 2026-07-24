@@ -2,6 +2,23 @@
 
 All notable changes are documented here.
 
+## 0.2.0 - 2026-07-24
+
+### Added
+
+- Capability routing for web, code, academic, and community search
+- No-key GitHub repository, Crossref academic, and Hacker News adapters
+- Jina Reader integration through REST, MCP, CLI, and TypeScript
+- Live `doctor` diagnostics with access tiers, latency, and partial failures
+- MCP `read_url` and `search_status` tools
+- Provider metadata discovery and honest quota documentation
+
+### Changed
+
+- Provider timeouts now abort in-flight requests
+- Search responses include the selected capability category
+- README and OpenAPI contract cover all v0.2 surfaces
+
 ## 0.1.0 - 2026-07-23
 
 ### Added

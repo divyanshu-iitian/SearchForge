@@ -1,7 +1,7 @@
 {
   "name": "searchforge-rag",
-  "version": "0.1.0",
-  "description": "Open-source web search gateway for LLMs, agents, and RAG pipelines.",
+  "version": "0.2.0",
+  "description": "Free, open-source search and web-reading gateway for LLMs, agents, and RAG.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,7 +36,10 @@
     "ai-agents",
     "mcp",
     "searxng",
-    "metasearch"
+    "metasearch",
+    "free-api",
+    "academic-search",
+    "github-search"
   ],
   "author": "Divyanshu <divyanshu-iitian@users.noreply.github.com>",
   "license": "MIT",

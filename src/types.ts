@@ -1,7 +1,11 @@
 export const SEARCH_SCHEMA_VERSION = "1.0" as const;
+export const READ_SCHEMA_VERSION = "1.0" as const;
+export const DOCTOR_SCHEMA_VERSION = "1.0" as const;
 
 export type Freshness = "day" | "week" | "month" | "year";
 export type SafeSearch = "off" | "moderate" | "strict";
+export type SearchCategory = "web" | "code" | "academic" | "community";
+export type AccessTier = "no-key" | "self-hosted" | "api-key";
 
 export interface SearchRequest {
   query: string;
@@ -9,7 +13,17 @@ export interface SearchRequest {
   language?: string;
   freshness?: Freshness;
   safeSearch?: SafeSearch;
+  category?: SearchCategory;
   providers?: string[];
+}
+
+export interface NormalizedSearchRequest {
+  query: string;
+  limit: number;
+  language: string;
+  freshness: Freshness;
+  safeSearch: SafeSearch;
+  category: SearchCategory;
 }
 
 export interface SearchResult {
@@ -33,6 +47,7 @@ export interface ProviderStatus {
 export interface SearchResponse {
   schemaVersion: typeof SEARCH_SCHEMA_VERSION;
   query: string;
+  category: SearchCategory;
   results: SearchResult[];
   providers: ProviderStatus[];
   tookMs: number;
@@ -48,11 +63,61 @@ export interface ProviderResult {
 
 export interface SearchProvider {
   readonly name: string;
-  search(request: Required<Omit<SearchRequest, "providers">>): Promise<ProviderResult[]>;
+  readonly categories?: readonly SearchCategory[];
+  readonly access?: AccessTier;
+  readonly description?: string;
+  search(request: NormalizedSearchRequest, signal?: AbortSignal): Promise<ProviderResult[]>;
+  health?(signal?: AbortSignal): Promise<void>;
+}
+
+export interface ProviderInfo {
+  name: string;
+  categories: readonly SearchCategory[];
+  access: AccessTier;
+  description?: string;
+}
+
+export interface DoctorProviderStatus extends ProviderInfo {
+  ok: boolean;
+  latencyMs: number;
+  error?: string;
+}
+
+export interface DoctorResponse {
+  schemaVersion: typeof DOCTOR_SCHEMA_VERSION;
+  status: "ok" | "degraded";
+  providers: DoctorProviderStatus[];
+  reader?: {
+    name: string;
+    ok: boolean;
+    latencyMs: number;
+    error?: string;
+  };
+  tookMs: number;
+}
+
+export interface ReadRequest {
+  url: string;
+}
+
+export interface ReadResponse {
+  schemaVersion: typeof READ_SCHEMA_VERSION;
+  url: string;
+  content: string;
+  reader: string;
+  tookMs: number;
+  cached: boolean;
+}
+
+export interface ContentReader {
+  readonly name: string;
+  read(url: URL, signal?: AbortSignal): Promise<string>;
+  health?(signal?: AbortSignal): Promise<void>;
 }
 
 export interface SearchForgeOptions {
   providers: SearchProvider[];
+  reader?: ContentReader;
   timeoutMs?: number;
   cacheTtlMs?: number;
   cacheMaxEntries?: number;

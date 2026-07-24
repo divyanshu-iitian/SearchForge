@@ -20,7 +20,10 @@ afterEach(async () => {
 });
 
 async function serverUrl(apiKey?: string): Promise<string> {
-  const server = startServer(new SearchForge({ providers: [source] }), {
+  const server = startServer(new SearchForge({
+    providers: [source],
+    reader: { name: "fixture", read: vi.fn().mockResolvedValue("# Example") },
+  }), {
     port: 0,
     host: "127.0.0.1",
     ...(apiKey ? { apiKey } : {}),
@@ -42,6 +45,22 @@ describe("REST server", () => {
 
     expect(health).toEqual({ status: "ok", providers: ["fixture"] });
     expect(search.results[0]).toMatchObject({ title: "Fixture" });
+    expect(search.category).toBe("web");
+  });
+
+  it("serves provider metadata, URL reading, and doctor endpoints", async () => {
+    const base = await serverUrl();
+    const providers = await fetch(`${base}/v1/providers`).then((response) => response.json());
+    const read = await fetch(`${base}/v1/read`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com" }),
+    }).then((response) => response.json());
+    const doctor = await fetch(`${base}/v1/doctor`).then((response) => response.json());
+
+    expect(providers.providers[0]).toMatchObject({ name: "fixture", categories: ["web"] });
+    expect(read).toMatchObject({ content: "# Example", reader: "fixture" });
+    expect(doctor).toMatchObject({ status: "ok" });
   });
 
   it("enforces optional API key authentication", async () => {

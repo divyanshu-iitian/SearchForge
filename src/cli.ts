@@ -2,25 +2,31 @@
 import { createSearchForgeFromEnv } from "./config.js";
 import { SearchForgeError } from "./errors.js";
 import { startServer } from "./server.js";
-import type { Freshness, SafeSearch } from "./types.js";
+import type { Freshness, SafeSearch, SearchCategory } from "./types.js";
 
 function help(): string {
   return `SearchForge — open web search for LLMs, agents, and RAG
 
 Usage:
-  searchforge search <query> [--limit 8] [--language en] [--freshness month] [--json]
+  searchforge search <query> [--category web|code|academic|community] [--limit 8] [--json]
+  searchforge read <url> [--json]
+  searchforge doctor [--json]
   searchforge serve [--port 3000] [--host 127.0.0.1]
   searchforge providers
   searchforge-mcp
 
 Environment:
   SEARCHFORGE_SEARXNG_URL   Self-hosted SearXNG endpoint
+  GITHUB_TOKEN              Optional; raises GitHub public API quota
+  CROSSREF_MAILTO           Optional; enables Crossref polite-pool routing
   BRAVE_SEARCH_API_KEY      Optional Brave Search API key
   SEARCHFORGE_API_KEY       Optional REST API bearer key
   SEARCHFORGE_TIMEOUT_MS    Per-provider timeout (default: 8000)
 
 Examples:
   searchforge search "open source vector databases" --limit 5
+  searchforge search "agent memory" --category academic
+  searchforge read "https://example.com/article"
   SEARCHFORGE_SEARXNG_URL=http://localhost:8080 searchforge serve
 `;
 }
@@ -60,7 +66,22 @@ async function main(): Promise<void> {
 
   const searchForge = createSearchForgeFromEnv();
   if (command === "providers") {
-    process.stdout.write(`${searchForge.providerNames().join("\n")}\n`);
+    process.stdout.write(`${JSON.stringify(searchForge.providerInfo(), null, 2)}\n`);
+    return;
+  }
+  if (command === "doctor") {
+    const response = await searchForge.doctor();
+    process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
+    if (response.status === "degraded") process.exitCode = 1;
+    return;
+  }
+  if (command === "read") {
+    const url = args[1];
+    if (!url || url.startsWith("--")) {
+      throw new SearchForgeError("read requires a URL", "INVALID_REQUEST", 400);
+    }
+    const response = await searchForge.read(url);
+    process.stdout.write(args.includes("--json") ? `${JSON.stringify(response, null, 2)}\n` : response.content);
     return;
   }
   if (command === "serve") {
@@ -85,6 +106,7 @@ async function main(): Promise<void> {
       language: valueAfter(args, "--language") ?? "en",
       freshness: (valueAfter(args, "--freshness") ?? "month") as Freshness,
       safeSearch: (valueAfter(args, "--safe-search") ?? "moderate") as SafeSearch,
+      category: (valueAfter(args, "--category") ?? "web") as SearchCategory,
     });
     process.stdout.write(args.includes("--json") ? `${JSON.stringify(response, null, 2)}\n` : render(response));
     return;
