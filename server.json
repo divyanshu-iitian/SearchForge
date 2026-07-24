@@ -1,0 +1,41 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.divyanshu-iitian/searchforge",
+  "title": "SearchForge",
+  "description": "Free open-source web search and page reading for LLMs, AI agents, and RAG.",
+  "version": "0.2.0",
+  "websiteUrl": "https://divyanshu-iitian.github.io/SearchForge/",
+  "repository": {
+    "url": "https://github.com/divyanshu-iitian/SearchForge",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/divyanshu-iitian/searchforge-mcp:0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SEARCHFORGE_SEARXNG_URL",
+          "description": "Optional URL of a self-hosted SearXNG instance"
+        },
+        {
+          "name": "GITHUB_TOKEN",
+          "description": "Optional GitHub token for higher public API quotas",
+          "isSecret": true
+        },
+        {
+          "name": "CROSSREF_MAILTO",
+          "description": "Optional email address for Crossref polite-pool routing"
+        },
+        {
+          "name": "BRAVE_SEARCH_API_KEY",
+          "description": "Optional Brave Search API key",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

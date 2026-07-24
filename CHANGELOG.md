@@ -9,6 +9,7 @@ All notable changes are documented here.
 - Crawlable project website with structured software metadata
 - `llms.txt`, sitemap, robots policy, and citation metadata
 - Official MCP Registry namespace metadata for a future npm release
+- MCP-specific OCI image target and secret-free GitHub OIDC registry publishing
 
 ### Changed
 
