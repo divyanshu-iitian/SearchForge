@@ -16,6 +16,7 @@ All notable changes are documented here.
 
 ### Changed
 
+- Docker Compose now targets the REST runtime explicitly while Glama and registry builds retain the MCP stdio target
 - README and package metadata now describe SearchForge with exact search terms
 - README links to the active official MCP Registry entry and published OCI image
 
