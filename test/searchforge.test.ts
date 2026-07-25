@@ -28,6 +28,21 @@ describe("SearchForge", () => {
     expect(response.results[0]?.url).toBe("https://example.com/post");
   });
 
+  it("sanitizes provider HTML and entities before returning untrusted text", async () => {
+    const source = provider("source", [{
+      title: "R&amp;D &lt;em&gt;update&lt;/em&gt;",
+      url: "https://example.com/research",
+      snippet: "&lt;strong&gt;Useful&lt;/strong&gt; result &#x1F680;",
+    }]);
+
+    const response = await new SearchForge({ providers: [source] }).search({ query: "research" });
+
+    expect(response.results[0]).toMatchObject({
+      title: "R&D update",
+      snippet: "Useful result 🚀",
+    });
+  });
+
   it("returns partial results when a provider fails", async () => {
     const healthy = provider("healthy", [{
       title: "Available",
@@ -93,6 +108,26 @@ describe("SearchForge", () => {
 
     expect(web.search).not.toHaveBeenCalled();
     expect(code.search).toHaveBeenCalledTimes(2);
+  });
+
+  it("auto-routes intent across relevant source families", async () => {
+    const web = { ...provider("web", []), categories: ["web"] as const };
+    const code = { ...provider("code", []), categories: ["code"] as const };
+    const academic = { ...provider("academic", []), categories: ["academic"] as const };
+    const community = { ...provider("community", []), categories: ["community"] as const };
+    const forge = new SearchForge({ providers: [web, code, academic, community] });
+
+    const response = await forge.search({ query: "latest open-source agent frameworks" });
+
+    expect(response.category).toBe("auto");
+    expect(web.search).toHaveBeenCalledOnce();
+    expect(code.search).toHaveBeenCalledOnce();
+    expect(code.search).toHaveBeenCalledWith(
+      expect.objectContaining({ query: "open source agent frameworks" }),
+      expect.any(AbortSignal),
+    );
+    expect(community.search).toHaveBeenCalledOnce();
+    expect(academic.search).not.toHaveBeenCalled();
   });
 
   it("reads and caches public URLs but rejects local targets", async () => {

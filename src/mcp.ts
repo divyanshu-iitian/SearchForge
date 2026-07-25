@@ -35,9 +35,9 @@ server.registerTool(
         .default("moderate")
         .describe("Requested safe-search level; enforcement depends on the selected provider."),
       category: z
-        .enum(["web", "code", "academic", "community"])
-        .default("web")
-        .describe("Source family: web, GitHub code, Crossref academic works, or Hacker News community posts."),
+        .enum(["auto", "web", "code", "academic", "community"])
+        .default("auto")
+        .describe("Source family. Auto infers useful source families from the query; explicit values restrict routing."),
       providers: z
         .array(z.string())
         .optional()

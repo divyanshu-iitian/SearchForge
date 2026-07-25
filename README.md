@@ -11,7 +11,7 @@
 [![Website](https://img.shields.io/badge/docs-SearchForge-087a54)](https://divyanshu-iitian.github.io/SearchForge/)
 [![Official MCP Registry](https://img.shields.io/badge/MCP_Registry-active-087a54)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.divyanshu-iitian/searchforge)
 
-**One local gateway. Four search capabilities. Clean Markdown. REST, MCP, CLI, and TypeScript.**
+**One local gateway. Intent-aware search. Clean Markdown. REST, MCP, CLI, and TypeScript.**
 
 [Website](https://divyanshu-iitian.github.io/SearchForge/) · [Quick start](#quick-start) · [Free tools](#free-tools) · [MCP](#mcp) · [API](#rest-api) · [Design](#how-it-works)
 
@@ -27,15 +27,25 @@ It does **not** generate answers, hide citations, scrape public SearXNG instance
 
 | Capability  | Default source                      | Cost / credentials             |
 | ----------- | ----------------------------------- | ------------------------------ |
+| `auto`      | Intent-routed source mix            | No key by default              |
 | `web`       | Wikipedia; optional private SearXNG | No key / self-hosted           |
 | `code`      | GitHub repository search            | No key; token optional         |
 | `academic`  | Crossref works and DOI metadata     | No key                         |
 | `community` | Hacker News via Algolia             | No key, community service      |
 | `read_url`  | Jina Reader                         | No key, currently rate-limited |
 
-SearchForge starts with all no-key adapters enabled. A GitHub token only raises the public API quota, and Brave remains an optional keyed backend. Broad, independent web metasearch is provided by the included SearXNG stack.
+SearchForge starts with all no-key adapters enabled. `auto` is the default and routes code, research, and current/community intent to relevant sources while retaining a web fallback. A GitHub token only raises the public API quota, and Brave remains an optional keyed backend. Broad, independent web metasearch is provided by the included SearXNG stack.
 
 ## Quick start
+
+### Try it without cloning
+
+```bash
+npx --yes --package github:divyanshu-iitian/SearchForge \
+  searchforge search "latest open-source agent frameworks"
+```
+
+The first run downloads and builds the package from GitHub. Searches use intent-aware `auto` routing unless you select a category.
 
 ### Zero-key local CLI
 
@@ -45,7 +55,7 @@ cd SearchForge
 npm install
 npm run build
 
-node dist/cli.js search "open source agent frameworks" --category code
+node dist/cli.js search "latest open-source agent frameworks"
 node dist/cli.js search "retrieval augmented generation" --category academic
 node dist/cli.js search "local LLM tooling" --category community
 node dist/cli.js read "https://example.com"
@@ -71,12 +81,13 @@ This starts SearchForge on port `3000` and a private, JSON-enabled SearXNG on po
 ### Search by capability
 
 ```bash
+searchforge search "latest open-source agent frameworks"
 searchforge search "browser agent" --category code
 searchforge search "semantic reranking" --category academic --json
 searchforge search "Show HN search engine" --category community
 ```
 
-Categories prevent irrelevant providers from being queried. An explicit `providers` list overrides category routing, which is useful for evaluations.
+The default `auto` category detects code, academic, and current/community signals and queries the matching source families alongside the web fallback. Explicit categories prevent irrelevant providers from being queried. An explicit `providers` list overrides category routing, which is useful for evaluations.
 
 ### Read a URL as Markdown
 
@@ -117,6 +128,24 @@ SearchForge exposes three stdio tools:
 ```
 
 The search and status tools return MCP structured content as well as readable text.
+
+Run the MCP server straight from GitHub without a clone:
+
+```json
+{
+  "mcpServers": {
+    "searchforge": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "--package",
+        "github:divyanshu-iitian/SearchForge",
+        "searchforge-mcp"
+      ]
+    }
+  }
+}
+```
 
 SearchForge is also published in the
 [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.divyanshu-iitian/searchforge)

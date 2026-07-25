@@ -16,6 +16,7 @@ export type {
   DoctorResponse,
   NormalizedSearchRequest,
   ProviderResult,
+  ProviderCategory,
   ProviderInfo,
   ProviderStatus,
   ReadRequest,

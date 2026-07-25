@@ -115,8 +115,9 @@ components:
           maxLength: 500
         category:
           type: string
-          enum: [web, code, academic, community]
-          default: web
+          enum: [auto, web, code, academic, community]
+          default: auto
+          description: Auto infers useful source families from query intent; explicit values restrict routing.
         limit:
           type: integer
           minimum: 1
@@ -169,7 +170,7 @@ components:
           type: string
         category:
           type: string
-          enum: [web, code, academic, community]
+          enum: [auto, web, code, academic, community]
         results:
           type: array
           items:

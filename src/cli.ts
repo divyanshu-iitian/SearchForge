@@ -8,7 +8,7 @@ function help(): string {
   return `SearchForge — open web search for LLMs, agents, and RAG
 
 Usage:
-  searchforge search <query> [--category web|code|academic|community] [--limit 8] [--json]
+  searchforge search <query> [--category auto|web|code|academic|community] [--limit 8] [--json]
   searchforge read <url> [--json]
   searchforge doctor [--json]
   searchforge serve [--port 3000] [--host 127.0.0.1]
@@ -106,7 +106,7 @@ async function main(): Promise<void> {
       language: valueAfter(args, "--language") ?? "en",
       freshness: (valueAfter(args, "--freshness") ?? "month") as Freshness,
       safeSearch: (valueAfter(args, "--safe-search") ?? "moderate") as SafeSearch,
-      category: (valueAfter(args, "--category") ?? "web") as SearchCategory,
+      category: (valueAfter(args, "--category") ?? "auto") as SearchCategory,
     });
     process.stdout.write(args.includes("--json") ? `${JSON.stringify(response, null, 2)}\n` : render(response));
     return;

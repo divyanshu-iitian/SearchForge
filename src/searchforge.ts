@@ -12,6 +12,7 @@ import {
   type NormalizedSearchRequest,
   type SearchForgeOptions,
   type SearchProvider,
+  type ProviderCategory,
   type SearchRequest,
   type SearchResponse,
   type SearchResult,
@@ -42,9 +43,9 @@ function normalizeRequest(request: SearchRequest): NormalizedSearchRequest {
   if (!["off", "moderate", "strict"].includes(safeSearch)) {
     throw new SearchForgeError("safeSearch must be off, moderate, or strict", "INVALID_REQUEST", 400);
   }
-  const category = request.category ?? "web";
-  if (!["web", "code", "academic", "community"].includes(category)) {
-    throw new SearchForgeError("category must be web, code, academic, or community", "INVALID_REQUEST", 400);
+  const category = request.category ?? "auto";
+  if (!["auto", "web", "code", "academic", "community"].includes(category)) {
+    throw new SearchForgeError("category must be auto, web, code, academic, or community", "INVALID_REQUEST", 400);
   }
   if (request.providers !== undefined && (
     !Array.isArray(request.providers)
@@ -61,6 +62,61 @@ function normalizeRequest(request: SearchRequest): NormalizedSearchRequest {
     safeSearch,
     category,
   };
+}
+
+const AUTO_SIGNALS: Record<Exclude<ProviderCategory, "web">, RegExp> = {
+  code: /\b(github|gitlab|repo(?:sitory)?|repositories|source code|open[- ]source|framework|library|sdk|package|npm|typescript|javascript|python|rust|golang|developer tool)\b/i,
+  academic: /\b(arxiv|doi|paper|papers|research|study|studies|academic|journal|citation|survey|systematic review|benchmark)\b/i,
+  community: /\b(latest|news|today|recent|launch|launched|discussion|opinion|community|trend(?:ing)?|show hn|ask hn|hacker news)\b/i,
+};
+
+function inferCategories(query: string): Set<ProviderCategory> {
+  const categories = new Set<ProviderCategory>(["web"]);
+  for (const [category, signal] of Object.entries(AUTO_SIGNALS) as Array<
+    [Exclude<ProviderCategory, "web">, RegExp]
+  >) {
+    if (signal.test(query)) categories.add(category);
+  }
+  return categories;
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: "\"",
+};
+
+function cleanText(value: string, maxLength: number): string {
+  const decoded = value.replace(/&(#x[\da-f]+|#\d+|amp|apos|gt|lt|nbsp|quot);/gi, (match, entity: string) => {
+    const normalized = entity.toLowerCase();
+    if (normalized.startsWith("#x")) {
+      const codePoint = Number.parseInt(normalized.slice(2), 16);
+      return Number.isSafeInteger(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+    if (normalized.startsWith("#")) {
+      const codePoint = Number.parseInt(normalized.slice(1), 10);
+      return Number.isSafeInteger(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+    return HTML_ENTITIES[normalized] ?? match;
+  });
+  const clean = decoded.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return clean.length <= maxLength ? clean : `${clean.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function requestForProvider(
+  request: NormalizedSearchRequest,
+  provider: SearchProvider,
+): NormalizedSearchRequest {
+  if (request.category !== "auto" || !(provider.categories ?? ["web"]).includes("code")) return request;
+  const query = request.query
+    .replace(/-/g, " ")
+    .replace(/\b(latest|newest|recent|today|news|trending)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return query && query !== request.query ? { ...request, query } : request;
 }
 
 function canonicalUrl(raw: string): string {
@@ -114,17 +170,19 @@ function fuse(groups: Ranked[][], limit: number): SearchResult[] {
   for (const group of groups) {
     for (const { result, provider, rank } of group) {
       const key = canonicalUrl(result.url);
+      const title = cleanText(result.title, 300);
+      const snippet = cleanText(result.snippet, 1_000);
       const contribution = 1 / (60 + rank);
       const existing = merged.get(key);
       if (existing) {
         existing.score += contribution;
         if (!existing.sources.includes(provider)) existing.sources.push(provider);
-        if (result.snippet.length > existing.snippet.length) existing.snippet = result.snippet;
+        if (snippet.length > existing.snippet.length) existing.snippet = snippet;
       } else {
         merged.set(key, {
-          title: result.title,
+          title,
           url: key,
-          snippet: result.snippet,
+          snippet,
           ...(result.publishedAt ? { publishedAt: result.publishedAt } : {}),
           source: provider,
           sources: [provider],
@@ -173,9 +231,15 @@ export class SearchForge {
   async search(input: SearchRequest): Promise<SearchResponse> {
     const request = normalizeRequest(input);
     const requestedProviders = input.providers as string[] | undefined;
+    const inferredCategories = request.category === "auto" ? inferCategories(request.query) : undefined;
     const selected = requestedProviders
       ? this.providers.filter((provider) => requestedProviders.includes(provider.name))
-      : this.providers.filter((provider) => (provider.categories ?? ["web"]).includes(request.category));
+      : this.providers.filter((provider) => {
+        const categories = provider.categories ?? ["web"];
+        return inferredCategories
+          ? categories.some((category) => inferredCategories.has(category))
+          : categories.includes(request.category as ProviderCategory);
+      });
     if (selected.length === 0) {
       throw new SearchForgeError("none of the requested providers are configured", "INVALID_REQUEST", 400);
     }
@@ -189,7 +253,7 @@ export class SearchForge {
       const providerStartedAt = Date.now();
       try {
         const results = await withTimeout(
-          (signal) => provider.search(request, signal),
+          (signal) => provider.search(requestForProvider(request, provider), signal),
           this.timeoutMs,
           provider.name,
         );

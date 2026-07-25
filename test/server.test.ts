@@ -45,7 +45,7 @@ describe("REST server", () => {
 
     expect(health).toEqual({ status: "ok", providers: ["fixture"] });
     expect(search.results[0]).toMatchObject({ title: "Fixture" });
-    expect(search.category).toBe("web");
+    expect(search.category).toBe("auto");
   });
 
   it("serves provider metadata, URL reading, and doctor endpoints", async () => {

@@ -6,6 +6,9 @@ All notable changes are documented here.
 
 ### Added
 
+- Intent-aware `auto` routing across web, code, academic, and community sources
+- Provider-text normalization that decodes entities and removes embedded HTML
+- One-command GitHub CLI and MCP quick starts
 - Crawlable project website with structured software metadata
 - `llms.txt`, sitemap, robots policy, and citation metadata
 - Official MCP Registry namespace metadata for a future npm release

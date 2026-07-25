@@ -89,8 +89,8 @@
           <p class="eyebrow">Open-source retrieval infrastructure</p>
           <h1>Web search for every LLM.</h1>
           <p class="lede">
-            One self-hostable search API for agents and RAG, with no-key sources,
-            citations, and partial-failure resilience.
+            One self-hostable search API for agents and RAG, with intent-aware routing,
+            no-key sources, citations, and partial-failure resilience.
           </p>
           <div class="actions">
             <a class="button primary" href="https://github.com/divyanshu-iitian/SearchForge">
@@ -108,16 +108,16 @@
         <figure class="result-preview">
           <figcaption>Structured evidence, ready for an agent</figcaption>
           <pre><code>{
-  "query": "open source rerankers",
-  "category": "academic",
+  "query": "latest open-source agent frameworks",
+  "category": "auto",
   "results": [{
-    "title": "Example work",
-    "url": "https://doi.org/...",
-    "source": "crossref",
+    "title": "TEN-framework/ten-framework",
+    "url": "https://github.com/TEN-framework/ten-framework",
+    "source": "github",
     "score": 0.016393
   }],
   "providers": [{
-    "provider": "crossref",
+    "provider": "github",
     "ok": true
   }]
 }</code></pre>
@@ -142,6 +142,11 @@
         </div>
 
         <div class="capability-grid">
+          <article class="capability capability-accent capability-wide">
+            <h3>Auto route</h3>
+            <p>Detect code, research, and current-event intent and select relevant source families automatically.</p>
+            <code>category: "auto"</code>
+          </article>
           <article class="capability capability-wide">
             <h3>Web</h3>
             <p>Run private metasearch through SearXNG with Wikipedia as a no-key fallback.</p>
@@ -194,13 +199,11 @@
 
       <section class="quickstart" aria-labelledby="quickstart-title">
         <div>
-          <h2 id="quickstart-title">Running in four commands.</h2>
-          <p>Node.js 20 or newer. No account is required for the default adapters.</p>
+          <h2 id="quickstart-title">One command. No account.</h2>
+          <p>Node.js 20 or newer. Intent-aware routing is enabled by default.</p>
         </div>
-        <pre><code>git clone https://github.com/divyanshu-iitian/SearchForge.git
-cd SearchForge
-npm install &amp;&amp; npm run build
-node dist/cli.js search "agent frameworks" --category code</code></pre>
+        <pre><code>npx --yes --package github:divyanshu-iitian/SearchForge \
+  searchforge search "latest open-source agent frameworks"</code></pre>
       </section>
 
       <section class="principles">

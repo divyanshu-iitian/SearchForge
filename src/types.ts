@@ -4,7 +4,8 @@ export const DOCTOR_SCHEMA_VERSION = "1.0" as const;
 
 export type Freshness = "day" | "week" | "month" | "year";
 export type SafeSearch = "off" | "moderate" | "strict";
-export type SearchCategory = "web" | "code" | "academic" | "community";
+export type SearchCategory = "auto" | "web" | "code" | "academic" | "community";
+export type ProviderCategory = Exclude<SearchCategory, "auto">;
 export type AccessTier = "no-key" | "self-hosted" | "api-key";
 
 export interface SearchRequest {
@@ -63,7 +64,7 @@ export interface ProviderResult {
 
 export interface SearchProvider {
   readonly name: string;
-  readonly categories?: readonly SearchCategory[];
+  readonly categories?: readonly ProviderCategory[];
   readonly access?: AccessTier;
   readonly description?: string;
   search(request: NormalizedSearchRequest, signal?: AbortSignal): Promise<ProviderResult[]>;
@@ -72,7 +73,7 @@ export interface SearchProvider {
 
 export interface ProviderInfo {
   name: string;
-  categories: readonly SearchCategory[];
+  categories: readonly ProviderCategory[];
   access: AccessTier;
   description?: string;
 }
